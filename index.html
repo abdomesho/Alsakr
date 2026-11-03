@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عرض سعر - الصقر للتوريدات والصيانة</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #eef1f5;
+      direction: rtl;
+    }
+
+    input, textarea {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl !important;
+      text-align: center !important;
+      border: none !important;
+      border-bottom: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      background: transparent;
+      width: 100%;
+      padding: 2px 4px;
+    }
+
+    input:focus, textarea:focus {
+      border: none !important;
+      border-bottom: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      background: rgba(23, 61, 93, 0.04);
+      border-radius: 4px;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #94a3b8;
+      opacity: 1;
+      text-align: center;
+    }
+
+    .paper {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 20px auto;
+      padding: 12mm;
+      background: white;
+      box-shadow: 0 4px 20px #00000012;
+      color: #222;
+    }
+
+    .company-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: #173d5d;
+    }
+
+    .section-title {
+      background: #173d5d;
+      color: white;
+      padding: 7px 12px;
+      font-weight: 700;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 5px 0;
+      text-align: center;
+    }
+
+    .info-label {
+      font-weight: 700;
+      white-space: nowrap;
+      color: #173d5d;
+    }
+
+    .info-input {
+      flex: 1;
+      min-width: 0;
+      text-align: center !important;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th {
+      background: #173d5d;
+      color: white;
+      padding: 8px 5px;
+      border: 1px solid #173d5d;
+      font-size: 12px;
+    }
+
+    td {
+      border: 1px solid #b9c3cc;
+      padding: 5px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    td input, td textarea {
+      text-align: center !important;
+      padding: 4px;
+      border-bottom: none !important;
+    }
+
+    td textarea {
+      resize: none;
+      min-height: 35px;
+    }
+
+    .number-input {
+      text-align: center !important;
+      direction: ltr !important;
+    }
+
+    .total-row {
+      font-weight: 700;
+      background: #edf2f6;
+    }
+
+    .action-btn {
+      padding: 9px 15px;
+      border-radius: 7px;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .no-print {
+      display: flex;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .paper {
+        margin: 0;
+        box-shadow: none;
+        width: 210mm;
+        min-height: 297mm;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      input, textarea {
+        color: #000 !important;
+        border-bottom: none !important;
+      }
+    }
+
+    @media screen and (max-width: 800px) {
+      .paper {
+        width: 100%;
+        min-height: 100vh;
+        padding: 15px;
+        margin: 0;
+      }
+
+      .company-name {
+        font-size: 20px;
+      }
+
+      .mobile-header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .mobile-actions {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- شريط الأزرار العلوية -->
+  <div class="no-print mobile-actions justify-center gap-2 flex-wrap p-4">
+    <button onclick="downloadPDF()" class="action-btn bg-blue-700 shadow-md flex items-center gap-2">
+      <i class="fas fa-file-pdf"></i> تحميل PDF على الموبايل
+    </button>
+
+    <button onclick="window.print()" class="action-btn bg-green-700 shadow-md flex items-center gap-2">
+      <i class="fas fa-print"></i> طباعة
+    </button>
+
+    <button onclick="addItem()" class="action-btn bg-indigo-600 shadow-md flex items-center gap-2">
+      <i class="fas fa-plus"></i> إضافة بند جديد
+    </button>
+
+    <button onclick="showResetModal()" class="action-btn bg-red-600 shadow-md flex items-center gap-2">
+      <i class="fas fa-rotate-right"></i> إعادة ضبط
+    </button>
+  </div>
+
+  <main class="paper" id="invoice">
+
+    <!-- رأس الشركة -->
+    <header class="flex justify-between items-start gap-4 border-b-2 border-[#173d5d] pb-4 mobile-header">
+
+      <!-- اليمين: بيانات العميل (تم توحيدها ومحاذاتها بشكل احترافي) -->
+      <div class="w-64 bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <div class="text-xs font-bold text-[#173d5d] mb-2 border-b border-slate-300 pb-1">بيانات العميل / الموجه إليه:</div>
+        <div class="info-row">
+          <span class="info-label">م /</span>
+          <input id="companyName" class="info-input" type="text" placeholder="اسم العميل / الشركة">
+        </div>
+        <div class="info-row">
+          <span class="info-label">ت /</span>
+          <input id="companyPhone" class="info-input" type="tel" placeholder="رقم الهاتف">
+        </div>
+      </div>
+
+      <!-- الوسط: شعار ورأس الشركة -->
+      <div class="text-center self-center">
+        <div class="text-2xl font-extrabold text-[#173d5d]">F . S . M</div>
+        <div class="text-xs text-gray-500 font-semibold tracking-wider">EL-SAKR</div>
+      </div>
+
+      <!-- اليسار: بيانات شركة الصقر للتوريدات والصيانة -->
+      <div class="text-right flex-1">
+        <div class="company-name">الصقر للتوريدات والصيانة</div>
+        <div class="text-xs font-bold text-gray-600 mb-1">Supply & Maintenance</div>
+        <div class="text-xs text-gray-700">العنوان: مسطرد - ترعة الإسماعيلية</div>
+        <div class="text-xs text-gray-700">البريد الإلكتروني: elsakr.squer@gmail.com</div>
+        <div class="text-xs text-gray-700">السجل التجاري: 29268</div>
+        <div class="text-xs text-gray-700">الرقم الضريبي: 557596378</div>
+      </div>
+
+    </header>
+
+    <!-- عنوان العرض والتاريخ -->
+    <div class="text-center my-5">
+      <h1 class="text-2xl font-extrabold text-[#173d5d] underline decoration-2 underline-offset-8">عرض سعر</h1>
+    </div>
+
+    <div class="flex justify-between items-center gap-3 mb-5">
+      <div class="info-row flex-1">
+        <span class="info-label">التاريخ:</span>
+        <span id="dateDisplay" class="font-bold text-gray-800"></span>
+      </div>
+
+      <div class="info-row flex-1">
+        <span class="info-label">رقم العقد / W.O:</span>
+        <input id="woCode" class="info-input" placeholder="أدخل رقم العقد">
+      </div>
+    </div>
+
+    <!-- بيانات الموقع -->
+    <div class="section-title">بيانات الموقع</div>
+
+    <div class="grid grid-cols-2 gap-4 mb-5">
+      <div class="info-row">
+        <span class="info-label">اسم المطعم / الفرع:</span>
+        <input id="restaurantName" class="info-input" placeholder="اسم المطعم">
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">كود المطعم:</span>
+        <input id="restaurantCode" class="info-input" placeholder="كود المطعم">
+      </div>
+    </div>
+
+    <!-- جدول البنود -->
+    <div class="section-title">تفاصيل عرض السعر</div>
+
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th style="width: 7%">م</th>
+          <th style="width: 43%">البيان</th>
+          <th style="width: 12%">الكمية</th>
+          <th style="width: 18%">سعر الوحدة</th>
+          <th style="width: 20%">الإجمالي</th>
+          <th class="no-print" style="width: 8%">حذف</th>
+        </tr>
+      </thead>
+
+      <tbody id="itemsBody"></tbody>
+    </table>
+
+    <div class="no-print justify-start mt-3">
+      <button onclick="addItem()" class="action-btn bg-indigo-600 flex items-center gap-2 text-sm">
+        <i class="fas fa-plus"></i> إضافة بند جديد
+      </button>
+    </div>
+
+    <!-- الإجماليات -->
+    <div class="flex justify-start mt-5">
+      <div class="w-full md:w-1/2">
+        <table>
+          <tbody>
+            <tr>
+              <td class="font-bold text-right">الإجمالي قبل الضريبة</td>
+              <td id="subtotal" class="font-bold">0.00 ج.م</td>
+            </tr>
+
+            <tr>
+              <td class="font-bold text-right">
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="taxEnabled" checked onchange="calculateTotals()" style="width:auto">
+                  ضريبة القيمة المضافة 14%
+                </label>
+              </td>
+              <td id="taxAmount" class="font-bold">0.00 ج.م</td>
+            </tr>
+
+            <tr class="total-row">
+              <td class="text-right text-base text-[#173d5d]">الإجمالي النهائي</td>
+              <td id="grandTotal" class="text-base text-[#173d5d]">0.00 ج.م</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- الشروط -->
+    <div class="mt-7">
+      <div class="section-title">الشروط والأحكام</div>
+      <p class="text-xs text-gray-700 leading-relaxed">• العرض ساري لمدة 10 أيام من تاريخ العرض.</p>
+      <p class="text-xs text-gray-700 leading-relaxed">• يتم الاتفاق على موعد التنفيذ قبل بدء العمل.</p>
+      <p class="text-xs text-gray-700 leading-relaxed">• جميع الأسعار المدونة بالجنيه المصري.</p>
+    </div>
+
+    <!-- التوقيع والاعتماد (بدون ختم) -->
+    <div class="flex justify-between items-end mt-12 pt-6 border-t border-slate-200">
+      <div class="text-center w-48">
+        <div class="font-bold text-sm text-[#173d5d] mb-10">اعتماد الشركة</div>
+        <div class="border-b border-dashed border-slate-400 w-36 mx-auto"></div>
+      </div>
+
+      <div class="text-center font-bold text-sm text-[#173d5d]">
+        وتفضلوا بقبول فائق الاحترام والتقدير
+      </div>
+
+      <div class="text-center w-48">
+        <div class="font-bold text-sm text-[#173d5d] mb-10">مستلم العرض</div>
+        <div class="border-b border-dashed border-slate-400 w-36 mx-auto"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- نافذة التنبيهات المخصصة بدلاً من alert/confirm -->
+  <div id="customModal" class="modal-overlay">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4 text-center">
+      <h3 id="modalTitle" class="text-lg font-bold text-[#173d5d] mb-2">تأكيد</h3>
+      <p id="modalMessage" class="text-sm text-gray-600 mb-6">هل أنت تأكد من هذا الإجراء؟</p>
+      <div class="flex justify-center gap-3">
+        <button id="modalConfirmBtn" class="bg-red-600 text-white px-4 py-2 rounded-md font-bold text-sm hover:bg-red-700">تأكيد</button>
+        <button onclick="closeModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-bold text-sm hover:bg-gray-400">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let items = [];
+
+    function updateDate() {
+      const now = new Date();
+      document.getElementById('dateDisplay').textContent =
+        now.toLocaleDateString('ar-EG', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+    }
+
+    function addItem() {
+      items.push({
+        description: '',
+        qty: '',
+        price: ''
+      });
+
+      renderRows();
+      calculateTotals();
+    }
+
+    function renderRows() {
+      const body = document.getElementById('itemsBody');
+      body.innerHTML = '';
+
+      items.forEach((item, index) => {
+        const row = document.createElement('tr');
+
+        const numberCell = document.createElement('td');
+        numberCell.textContent = index + 1;
+
+        const descriptionCell = document.createElement('td');
+        const description = document.createElement('textarea');
+        description.value = item.description;
+        description.placeholder = 'أدخل بيان البند...';
+        description.dataset.index = index;
+        description.addEventListener('input', function () {
+          items[index].description = this.value;
+        });
+        descriptionCell.appendChild(description);
+
+        const qtyCell = document.createElement('td');
+        const qty = document.createElement('input');
+        qty.type = 'number';
+        qty.min = '0';
+        qty.step = 'any';
+        qty.className = 'number-input';
+        qty.value = item.qty;
+        qty.placeholder = '0';
+        qty.addEventListener('input', function () {
+          items[index].qty = this.value;
+          calculateTotals();
+        });
+        qtyCell.appendChild(qty);
+
+        const priceCell = document.createElement('td');
+        const price = document.createElement('input');
+        price.type = 'number';
+        price.min = '0';
+        price.step = 'any';
+        price.className = 'number-input';
+        price.value = item.price;
+        price.placeholder = '0.00';
+        price.addEventListener('input', function () {
+          items[index].price = this.value;
+          calculateTotals();
+        });
+        priceCell.appendChild(price);
+
+        const totalCell = document.createElement('td');
+        totalCell.id = 'rowTotal' + index;
+        totalCell.className = 'font-bold';
+        totalCell.textContent = '0.00';
+
+        const deleteCell = document.createElement('td');
+        deleteCell.className = 'no-print';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteButton.className = 'text-red-600 px-2 hover:text-red-800';
+        deleteButton.onclick = function () {
+          items.splice(index, 1);
+          renderRows();
+          calculateTotals();
+        };
+
+        deleteCell.appendChild(deleteButton);
+
+        row.append(
+          numberCell,
+          descriptionCell,
+          qtyCell,
+          priceCell,
+          totalCell,
+          deleteCell
+        );
+
+        body.appendChild(row);
+      });
+    }
+
+    function calculateTotals() {
+      let subtotal = 0;
+
+      items.forEach((item, index) => {
+        const qty = Number(item.qty) || 0;
+        const price = Number(item.price) || 0;
+        const total = qty * price;
+
+        subtotal += total;
+
+        const cell = document.getElementById('rowTotal' + index);
+        if (cell) {
+          cell.textContent = total.toFixed(2);
+        }
+      });
+
+      const taxEnabled = document.getElementById('taxEnabled').checked;
+      const tax = taxEnabled ? subtotal * 0.14 : 0;
+      const grandTotal = subtotal + tax;
+
+      document.getElementById('subtotal').textContent =
+        subtotal.toFixed(2) + ' ج.م';
+
+      document.getElementById('taxAmount').textContent =
+        tax.toFixed(2) + ' ج.م';
+
+      document.getElementById('grandTotal').textContent =
+        grandTotal.toFixed(2) + ' ج.م';
+    }
+
+    function showResetModal() {
+      const modal = document.getElementById('customModal');
+      document.getElementById('modalTitle').textContent = 'إعادة ضبط البيانات';
+      document.getElementById('modalMessage').textContent = 'هل تريد مسح جميع البيانات وإعادة ضبط عرض السعر؟';
+      
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      confirmBtn.onclick = function() {
+        executeReset();
+        closeModal();
+      };
+
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('customModal').classList.remove('active');
+    }
+
+    function executeReset() {
+      document.getElementById('companyName').value = '';
+      document.getElementById('companyPhone').value = '';
+      document.getElementById('woCode').value = '';
+      document.getElementById('restaurantName').value = '';
+      document.getElementById('restaurantCode').value = '';
+      document.getElementById('taxEnabled').checked = true;
+
+      items = [];
+      addItem();
+      calculateTotals();
+      updateDate();
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('invoice');
+
+      if (typeof html2pdf === 'undefined') {
+        window.print();
+        return;
+      }
+
+      const options = {
+        margin: 0,
+        filename: 'عرض-سعر-الصقر.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait'
+        }
+      };
+
+      const buttons = document.querySelectorAll('.no-print');
+      buttons.forEach(button => button.style.display = 'none');
+
+      html2pdf().set(options).from(element).save().then(() => {
+        buttons.forEach(button => button.style.display = '');
+      }).catch(() => {
+        buttons.forEach(button => button.style.display = '');
+        window.print();
+      });
+    }
+
+    // تهيئة النموذج ببند أول افتراضي
+    addItem();
+    updateDate();
+  </script>
+
+</body>
+</html>
